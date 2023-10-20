@@ -1,0 +1,7 @@
+This repository will track my work for the acclerated computing project
+
+The template code in the file lebwohlLasher.py was provided and the aim 
+of this work is to use multiple methods to achieve the best speedup.
+
+A report will summarise the affect each optimisation method has on the time
+to run this program.
