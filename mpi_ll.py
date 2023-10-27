@@ -29,6 +29,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpi4py import MPI
+from math import floor
+
 
 #=======================================================================
 def initdat(nmax):
@@ -180,9 +182,9 @@ def all_energy(arr,nmax):
             enall += one_energy(arr,i,j,nmax)
     return enall
 #=======================================================================
-def all_energy_mpi(arr,nmax, irange):
+def all_energy_mpi(arr,nmax, il,iu):
     enall = 0.0
-    for i in range(irange):
+    for i in range(il,iu):
         for j in range(nmax):
             enall += one_energy(arr,i,j,nmax)
     return enall
@@ -281,57 +283,112 @@ def main(program, nsteps, nmax, temp, pflag):
     taskid=comm.rank
     size=comm.size
     
-    print(f"mpi init by rank {taskid}")
     
-    # Create and initialise lattice
-    lattice = initdat(nmax)
-    # Plot initial frame of lattice
-    plotdat(lattice,pflag,nmax)
-    # Create arrays to store energy, acceptance ratio and order parameter
-    energy = np.zeros(nsteps+1,dtype=np.dtype)
-    energy_mpi = energy
-    ratio = np.zeros(nsteps+1,dtype=np.dtype)
-    order = np.zeros(nsteps+1,dtype=np.dtype)
-    # Set initial values in arrays
-    energy[0] = all_energy(lattice,nmax)
-    ratio[0] = 0.5 # ideal value
-    order[0] = get_order(lattice,nmax)
+    
+    if taskid == 0:
+        # Create and initialise lattice
+        lattice = initdat(nmax)
+        v=np.array(lattice,dtype=float)
+        for i in range(1,size):
+            comm.send(v,dest=i, tag=0)
+        # Plot initial frame of lattice
+        #plotdat(lattice,pflag,nmax)
+        # Create arrays to store energy, acceptance ratio and order parameter
+        #energy = np.zeros(nsteps+1,dtype=np.dtype)
+        #energy_mpi = energy
+        ratio = np.zeros(nsteps+1,dtype=np.dtype)
+        order = np.zeros(nsteps+1,dtype=np.dtype)
+        # Set initial values in arrays
+        #energy[0] = all_energy(lattice,nmax)
+        ratio[0] = 0.5 # ideal value
+        order[0] = get_order(lattice,nmax)
 
     
     if taskid==0:
-        v=np.array([lattice],dtype=float)
-        comm.send(v,dest=1, tag=0)
-        print(f"task 0 sent data")
         # Begin doing and timing some MC steps.
         initial = time.time()
         for it in range(1,nsteps+1):
             ratio[it] = MC_step(lattice,temp,nmax)     
-            v=np.array([lattice],dtype=float)
-            comm.send(v,dest=1, tag=it)
-            
+            v=np.array(lattice,dtype=float)
+            for i in range(1,size):
+                comm.send(v,dest=i, tag=it)
+
             #energy[it] = all_energy(lattice,nmax)
             order[it] = get_order(lattice,nmax)
             
+    if taskid>0:
+            energy_mpi = np.zeros(nsteps+1,dtype=np.dtype)
+            data = comm.recv(source=0, tag=0)
             
-    if taskid==1:
-        for w in range(0,11):
-            data = comm.recv(source=0, tag=w)
-            empi = all_energy(data[0],nmax)
-            energy_mpi[w]=empi
-        v=np.array(energy_mpi,dtype=float)
-        comm.send(v,dest=0, tag=nsteps+1)   
-        
+            #distributing the lattice between cores
+            remainder = nmax%(size-1)
+            lower = (taskid-1)*floor(nmax/(size-1))
+            upper = lower+floor(nmax/(size-1))
+            if taskid == (size-1):
+                upper+=remainder
+
+            
+            energy_mpi[0]=all_energy_mpi(data,nmax,lower,upper)
+            for w in range(1,nsteps+1):
+                data = comm.recv(source=0, tag=w)
+                energy_mpi[w] = all_energy_mpi(data,nmax,lower, upper)
+            v=np.array(energy_mpi,dtype=float)
+            comm.send(v,dest=0, tag=nsteps+taskid)
+
+            
         
     if taskid==0:
-        energy = comm.recv(source=1, tag=nsteps+1)
+        count = np.zeros(nsteps+1)
+        for i in range(1,size):
+            e=comm.recv(source=i, tag=nsteps+i)
+            count = count + e
+
+                
+        
+        energy_mpi_tot = count
+
         final = time.time()
         runtime = final-initial
+        #print("CHECK:")
+        #print(f"real result - tot energy = {energy.sum()}")
+        #print(f"mpi result - tot energy = {energy_mpi_tot.sum()}")
+
+
+
+
+
 
         # Final outputs
         print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(program, nmax,nsteps,temp,order[nsteps-1],runtime))
     # Plot final frame of lattice and generate output file
-        savedat(lattice,nsteps,temp,runtime,ratio,energy,order,nmax)
-    #plotdat(lattice,pflag,nmax)
+        #savedat(lattice,nsteps,temp,runtime,ratio,energy,order,nmax)
+    #plotdat(lattice,pflag,nmax)            
+"""          
+    if taskid==1:
+        energy_mpi = np.zeros(nsteps+1,dtype=np.dtype)
+        data = comm.recv(source=0, tag=0)
+        energy_mpi[0]=all_energy_mpi(data,nmax,0,5)
+        for w in range(1,11):
+            data = comm.recv(source=0, tag=w)
+            empi = all_energy_mpi(data,nmax,0,5)
+            energy_mpi[w]=empi
+        v=np.array(energy_mpi,dtype=float)
+        comm.send(v,dest=0, tag=nsteps+1)
+        
+    if taskid==2:
+        energy_mpi = np.zeros(nsteps+1,dtype=np.dtype)
+        data = comm.recv(source=0, tag=0)
+        energy_mpi[0]=all_energy_mpi(data,nmax,5,10)
+        for w in range(1,11):
+            data = comm.recv(source=0, tag=w)
+            empi = all_energy_mpi(data,nmax,5,10)
+            energy_mpi[w]=empi
+        v=np.array(energy_mpi,dtype=float)
+        comm.send(v,dest=0, tag=nsteps+2)
+"""
+
+        
+
 #=======================================================================
 # Main part of program, getting command line arguments and calling
 # main simulation function.
