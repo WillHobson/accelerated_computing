@@ -1,9 +1,9 @@
 import numpy as np
 cimport numpy as np
-from libc.math cimport cos
+from libc.math cimport cos, exp
 from libc.math cimport pow
 
-cpdef one_energy(np.ndarray[double, ndim=2] arr, int ix, int iy, int nmax):
+cpdef double one_energy(np.ndarray[double, ndim=2] arr, int ix, int iy, int nmax):
     cdef double en, ang
     cdef int ixp, ixm, iyp, iym
     
@@ -24,7 +24,7 @@ cpdef one_energy(np.ndarray[double, ndim=2] arr, int ix, int iy, int nmax):
     return en
 
 
-cpdef all_energy(np.ndarray[double, ndim=2] arr, int nmax):
+cpdef double all_energy(np.ndarray[double, ndim=2] arr, int nmax):
     cdef double enall
     enall = 0.0
     for i in range(nmax):
@@ -32,7 +32,7 @@ cpdef all_energy(np.ndarray[double, ndim=2] arr, int nmax):
             enall += one_energy(arr,i,j,nmax)
     return enall
 
-cpdef get_order(np.ndarray[double, ndim=2] arr, int nmax):
+cpdef double get_order(np.ndarray[double, ndim=2] arr, int nmax):
     cdef np.ndarray[double, ndim=2] Qab = np.zeros((3,3))
     cdef np.ndarray[double, ndim=2] delta = np.eye(3,3)
     cdef np.ndarray[double, ndim=3] lab = np.vstack((np.cos(arr),np.sin(arr),np.zeros_like(arr))).reshape(3,nmax,nmax)
@@ -54,7 +54,7 @@ cpdef get_order(np.ndarray[double, ndim=2] arr, int nmax):
 
 
 
-cpdef MC_step(np.ndarray[double, ndim=2] arr, double Ts,int nmax):
+cpdef double MC_step(np.ndarray[double, ndim=2] arr, double Ts,int nmax):
     #
     # Pre-compute some random numbers.  This is faster than
     # using lots of individual calls.  "scale" sets the width
@@ -83,7 +83,7 @@ cpdef MC_step(np.ndarray[double, ndim=2] arr, double Ts,int nmax):
             else:
             # Now apply the Monte Carlo test - compare
             # exp( -(E_new - E_old) / T* ) >= rand(0,1)
-                boltz = np.exp( -(en1 - en0) / Ts )
+                boltz = exp( -(en1 - en0) / Ts )
 
                 if boltz >= np.random.uniform(0.0,1.0):
                     accept += 1
