@@ -29,3 +29,20 @@ cpdef all_energy(np.ndarray[double, ndim=2] arr, int nmax):
         for j in range(nmax):
             enall += one_energy(arr,i,j,nmax)
     return enall
+
+cpdef get_order(np.ndarray[double, ndim=2] arr, int nmax):
+    cdef np.ndarray[double, ndim=2] Qab = np.zeros((3,3))
+    cdef np.ndarray[double, ndim=2] delta = np.eye(3,3)
+    cdef np.ndarray[double, ndim=3] lab = np.vstack((np.cos(arr),np.sin(arr),np.zeros_like(arr))).reshape(3,nmax,nmax)
+    #
+    # Generate a 3D unit vector for each cell (i,j) and
+    # put it in a (3,i,j) array.
+    #
+    for a in range(3):
+        for b in range(3):
+            for i in range(nmax):
+                for j in range(nmax):
+                    Qab[a,b] += 3*lab[a,i,j]*lab[b,i,j] - delta[a,b]
+    Qab = Qab/(2*nmax*nmax)
+    eigenvalues,eigenvectors = np.linalg.eig(Qab)
+    return eigenvalues.max()
