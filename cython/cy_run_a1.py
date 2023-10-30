@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from cy_a2 import one_energy
+from cy_a1 import one_energy
 
 #=======================================================================
 def initdat(nmax):

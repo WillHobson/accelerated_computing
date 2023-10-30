@@ -1,6 +1,8 @@
 import numpy as np
 cimport numpy as np
-def one_energy(arr,ix,iy,nmax):
+cpdef one_energy(arr,ix,iy,nmax):
+    cdef double en, ang
+    cdef int ixp, ixm, iyp, iym
     en = 0.0
     ixp = (ix+1)%nmax # These are the coordinates
     ixm = (ix-1)%nmax # of the neighbours
