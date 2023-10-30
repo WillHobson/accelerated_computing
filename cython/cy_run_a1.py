@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from cy_a1 import one_energy, all_energy, get_order
+from cy_a1 import one_energy, all_energy, get_order, MC_step
 
 #=======================================================================
 def initdat(nmax):
@@ -14,37 +14,7 @@ def initdat(nmax):
 #=======================================================================
 
 #=======================================================================
-def MC_step(arr,Ts,nmax):
-    #
-    # Pre-compute some random numbers.  This is faster than
-    # using lots of individual calls.  "scale" sets the width
-    # of the distribution for the angle changes - increases
-    # with temperature.
-    scale=0.1+Ts
-    accept = 0
-    xran = np.random.randint(0,high=nmax, size=(nmax,nmax))
-    yran = np.random.randint(0,high=nmax, size=(nmax,nmax))
-    aran = np.random.normal(scale=scale, size=(nmax,nmax))
-    for i in range(nmax):
-        for j in range(nmax):
-            ix = xran[i,j]
-            iy = yran[i,j]
-            ang = aran[i,j]
-            en0 = one_energy(arr,ix,iy,nmax)
-            arr[ix,iy] += ang
-            en1 = one_energy(arr,ix,iy,nmax)
-            if en1<=en0:
-                accept += 1
-            else:
-            # Now apply the Monte Carlo test - compare
-            # exp( -(E_new - E_old) / T* ) >= rand(0,1)
-                boltz = np.exp( -(en1 - en0) / Ts )
 
-                if boltz >= np.random.uniform(0.0,1.0):
-                    accept += 1
-                else:
-                    arr[ix,iy] -= ang
-    return accept/(nmax*nmax)
 #=======================================================================
 def main(program, nsteps, nmax, temp, pflag):
     """
