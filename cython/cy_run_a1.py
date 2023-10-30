@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from cy_a1 import one_energy
+from cy_a1 import one_energy, all_energy
 
 #=======================================================================
 def initdat(nmax):
@@ -17,12 +17,7 @@ def initdat(nmax):
 #=======================================================================
 
 #=======================================================================
-def all_energy(arr,nmax):
-    enall = 0.0
-    for i in range(nmax):
-        for j in range(nmax):
-            enall += one_energy(arr,i,j,nmax)
-    return enall
+
 #=======================================================================
 def get_order(arr,nmax):
     Qab = np.zeros((3,3))
