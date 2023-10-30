@@ -1,6 +1,8 @@
 import numpy as np
 cimport numpy as np
 from libc.math cimport cos
+from libc.math cimport pow
+
 cpdef one_energy(np.ndarray[double, ndim=2] arr, int ix, int iy, int nmax):
     cdef double en, ang
     cdef int ixp, ixm, iyp, iym
@@ -12,13 +14,13 @@ cpdef one_energy(np.ndarray[double, ndim=2] arr, int ix, int iy, int nmax):
     iym = (iy-1)%nmax #
 
     ang = arr[ix,iy]-arr[ixp,iy]
-    en += 0.5*(1.0 - 3.0*cos(ang)**2)
+    en += 0.5*(1.0 - 3.0*pow(cos(ang),2))
     ang = arr[ix,iy]-arr[ixm,iy]
-    en += 0.5*(1.0 - 3.0*cos(ang)**2)
+    en += 0.5*(1.0 - 3.0*pow(cos(ang),2))
     ang = arr[ix,iy]-arr[ix,iyp]
-    en += 0.5*(1.0 - 3.0*cos(ang)**2)
+    en += 0.5*(1.0 - 3.0*pow(cos(ang),2))
     ang = arr[ix,iy]-arr[ix,iym]
-    en += 0.5*(1.0 - 3.0*cos(ang)**2)
+    en += 0.5*(1.0 - 3.0*pow(cos(ang),2))
     return en
 
 
