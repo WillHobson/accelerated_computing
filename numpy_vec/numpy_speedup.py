@@ -1,26 +1,4 @@
-"""
-Basic Python Lebwohl-Lasher code.  Based on the paper 
-P.A. Lebwohl and G. Lasher, Phys. Rev. A, 6, 426-429 (1972).
-This version in 2D.
 
-Run at the command line by typing:
-
-python LebwohlLasher.py <ITERATIONS> <SIZE> <TEMPERATURE> <PLOTFLAG>
-
-where:
-  ITERATIONS = number of Monte Carlo steps, where 1MCS is when each cell
-      has attempted a change once on average (i.e. SIZE*SIZE attempts)
-  SIZE = side length of square lattice
-  TEMPERATURE = reduced temperature in range 0.0 - 2.0.
-  PLOTFLAG = 0 for no plot, 1 for energy plot and 2 for angle plot.
-  
-The initial configuration is set at random. The boundaries
-are periodic throughout the simulation.  During the
-time-stepping, an array containing two domains is used; these
-domains alternate between old data and new data.
-
-SH 16-Oct-23
-"""
 
 import sys
 import time
@@ -32,38 +10,12 @@ import matplotlib as mpl
 
 #=======================================================================
 def initdat(nmax):
-    """
-    Arguments:
-      nmax (int) = size of lattice to create (nmax,nmax).
-    Description:
-      Function to create and initialise the main data array that holds
-      the lattice.  Will return a square lattice (size nmax x nmax)
-	  initialised with random orientations in the range [0,2pi].
-	Returns:
-	  arr (float(nmax,nmax)) = array to hold lattice.
-    """
+
     arr = np.random.random_sample((nmax,nmax))*2.0*np.pi
     return arr
 #=======================================================================
 def plotdat(arr,pflag,nmax):
-    """
-    Arguments:
-	  arr (float(nmax,nmax)) = array that contains lattice data;
-	  pflag (int) = parameter to control plotting;
-      nmax (int) = side length of square lattice.
-    Description:
-      Function to make a pretty plot of the data array.  Makes use of the
-      quiver plot style in matplotlib.  Use pflag to control style:
-        pflag = 0 for no plot (for scripted operation);
-        pflag = 1 for energy plot;
-        pflag = 2 for angles plot;
-        pflag = 3 for black plot.
-	  The angles plot uses a cyclic color map representing the range from
-	  0 to pi.  The energy plot is normalised to the energy range of the
-	  current frame.
-	Returns:
-      NULL
-    """
+
     if pflag==0:
         return
     u = np.cos(arr)
@@ -93,23 +45,7 @@ def plotdat(arr,pflag,nmax):
     plt.show()
 #=======================================================================
 def savedat(arr,nsteps,Ts,runtime,ratio,energy,order,nmax):
-    """
-    Arguments:
-	  arr (float(nmax,nmax)) = array that contains lattice data;
-	  nsteps (int) = number of Monte Carlo steps (MCS) performed;
-	  Ts (float) = reduced temperature (range 0 to 2);
-	  ratio (float(nsteps)) = array of acceptance ratios per MCS;
-	  energy (float(nsteps)) = array of reduced energies per MCS;
-	  order (float(nsteps)) = array of order parameters per MCS;
-      nmax (int) = side length of square lattice to simulated.
-    Description:
-      Function to save the energy, order and acceptance ratio
-      per Monte Carlo step to text file.  Also saves run data in the
-      header.  Filenames are generated automatically based on
-      date and time at beginning of execution.
-	Returns:
-	  NULL
-    """
+
     # Create filename based on current date and time.
     current_datetime = datetime.datetime.now().strftime("%a-%d-%b-%Y-at-%I-%M-%S%p")
     filename = "LL-Output-{:s}.txt".format(current_datetime)
@@ -130,20 +66,7 @@ def savedat(arr,nsteps,Ts,runtime,ratio,energy,order,nmax):
     FileOut.close()
 #=======================================================================
 def one_energy(arr,ix,iy,nmax):
-    """
-    Arguments:
-	  arr (float(nmax,nmax)) = array that contains lattice data;
-	  ix (int) = x lattice coordinate of cell;
-	  iy (int) = y lattice coordinate of cell;
-      nmax (int) = side length of square lattice.
-    Description:
-      Function that computes the energy of a single cell of the
-      lattice taking into account periodic boundaries.  Working with
-      reduced energy (U/epsilon), equivalent to setting epsilon=1 in
-      equation (1) in the project notes.
-	Returns:
-	  en (float) = reduced energy of cell.
-    """
+
     en = 0.0
     ixp = (ix+1)%nmax # These are the coordinates
     ixm = (ix-1)%nmax # of the neighbours
@@ -164,16 +87,7 @@ def one_energy(arr,ix,iy,nmax):
     return en
 #=======================================================================
 def all_energy(arr,nmax):
-    """
-    Arguments:
-	  arr (float(nmax,nmax)) = array that contains lattice data;
-      nmax (int) = side length of square lattice.
-    Description:
-      Function to compute the energy of the entire lattice. Output
-      is in reduced units (U/epsilon).
-	Returns:
-	  enall (float) = reduced energy of lattice.
-    """
+
     enall = 0.0
     for i in range(nmax):
         for j in range(nmax):
@@ -181,17 +95,7 @@ def all_energy(arr,nmax):
     return enall
 #=======================================================================
 def get_order(arr,nmax):
-    """
-    Arguments:
-	  arr (float(nmax,nmax)) = array that contains lattice data;
-      nmax (int) = side length of square lattice.
-    Description:
-      Function to calculate the order parameter of a lattice
-      using the Q tensor approach, as in equation (3) of the
-      project notes.  Function returns S_lattice = max(eigenvalues(Q_ab)).
-	Returns:
-	  max(eigenvalues(Qab)) (float) = order parameter for lattice.
-    """
+
     Qab = np.zeros((3,3))
     delta = np.eye(3,3)
     #
@@ -209,21 +113,7 @@ def get_order(arr,nmax):
     return eigenvalues.max()
 #=======================================================================
 def MC_step(arr,Ts,nmax):
-    """
-    Arguments:
-	  arr (float(nmax,nmax)) = array that contains lattice data;
-	  Ts (float) = reduced temperature (range 0 to 2);
-      nmax (int) = side length of square lattice.
-    Description:
-      Function to perform one MC step, which consists of an average
-      of 1 attempted change per lattice site.  Working with reduced
-      temperature Ts = kT/epsilon.  Function returns the acceptance
-      ratio for information.  This is the fraction of attempted changes
-      that are successful.  Generally aim to keep this around 0.5 for
-      efficient simulation.
-	Returns:
-	  accept/(nmax**2) (float) = acceptance ratio for current MCS.
-    """
+
     #
     # Pre-compute some random numbers.  This is faster than
     # using lots of individual calls.  "scale" sets the width
@@ -231,28 +121,26 @@ def MC_step(arr,Ts,nmax):
     # with temperature.
     scale=0.1+Ts
     accept = 0
-    xran = np.random.randint(0,high=nmax, size=(nmax,nmax))
-    yran = np.random.randint(0,high=nmax, size=(nmax,nmax))
+    
     aran = np.random.normal(scale=scale, size=(nmax,nmax))
-    for i in range(nmax):
-        for j in range(nmax):
-            ix = xran[i,j]
-            iy = yran[i,j]
-            ang = aran[i,j]
-            en0 = one_energy(arr,ix,iy,nmax)
-            arr[ix,iy] += ang
-            en1 = one_energy(arr,ix,iy,nmax)
-            if en1<=en0:
+    for i in range(nmax**2):
+        ix = i%nmax
+        iy = i//nmax
+        ang = aran[ix,iy]
+        en0 = one_energy(arr,ix,iy,nmax)
+        arr[ix,iy] += ang
+        en1 = one_energy(arr,ix,iy,nmax)
+        if en1<=en0:
+            accept += 1
+        else:
+        # Now apply the Monte Carlo test - compare
+        # exp( -(E_new - E_old) / T* ) >= rand(0,1)
+            boltz = np.exp( -(en1 - en0) / Ts )
+
+            if boltz >= np.random.uniform(0.0,1.0):
                 accept += 1
             else:
-            # Now apply the Monte Carlo test - compare
-            # exp( -(E_new - E_old) / T* ) >= rand(0,1)
-                boltz = np.exp( -(en1 - en0) / Ts )
-
-                if boltz >= np.random.uniform(0.0,1.0):
-                    accept += 1
-                else:
-                    arr[ix,iy] -= ang
+                arr[ix,iy] -= ang
     return accept/(nmax*nmax)
 #=======================================================================
 def main(program, nsteps, nmax, temp, pflag):
@@ -293,8 +181,8 @@ def main(program, nsteps, nmax, temp, pflag):
     # Final outputs
     print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(program, nmax,nsteps,temp,order[nsteps-1],runtime))
     # Plot final frame of lattice and generate output file
-    savedat(lattice,nsteps,temp,runtime,ratio,energy,order,nmax)
-    plotdat(lattice,pflag,nmax)
+    #savedat(lattice,nsteps,temp,runtime,ratio,energy,order,nmax)
+    #plotdat(lattice,pflag,nmax)
 #=======================================================================
 # Main part of program, getting command line arguments and calling
 # main simulation function.
