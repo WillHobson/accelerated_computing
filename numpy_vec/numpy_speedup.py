@@ -10,8 +10,9 @@ import matplotlib as mpl
 
 #=======================================================================
 def initdat(nmax):
-
-    arr = np.random.random_sample((nmax,nmax))*2.0*np.pi
+    rng = np.random.default_rng(seed=2310)
+    arr = rng.random(size=(nmax,nmax))*2.0*np.pi
+    #arr = np.random.random_sample((nmax,nmax))*2.0*np.pi
     return arr
 #=======================================================================
 def plotdat(arr,pflag,nmax):
@@ -121,8 +122,9 @@ def MC_step(arr,Ts,nmax):
     # with temperature.
     scale=0.1+Ts
     accept = 0
+    rng = np.random.default_rng(seed=2310)
+    aran=rng.normal(scale=scale, size=(nmax,nmax))
     
-    aran = np.random.normal(scale=scale, size=(nmax,nmax))
     for i in range(nmax**2):
         ix = i%nmax
         iy = i//nmax
@@ -137,7 +139,8 @@ def MC_step(arr,Ts,nmax):
         # exp( -(E_new - E_old) / T* ) >= rand(0,1)
             boltz = np.exp( -(en1 - en0) / Ts )
 
-            if boltz >= np.random.uniform(0.0,1.0):
+            rng = np.random.default_rng(seed=2310)
+            if boltz >= rng.uniform(0.0,1.0):
                 accept += 1
             else:
                 arr[ix,iy] -= ang
