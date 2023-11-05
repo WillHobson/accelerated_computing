@@ -198,6 +198,8 @@ def MC_step(arr,Ts,nmax, seed=None):
     # using lots of individual calls.  "scale" sets the width
     # of the distribution for the angle changes - increases
     # with temperature.
+    print(f"arr = {arr}")
+    print(f"seed={seed}")
     scale=0.1+Ts
     accept = 0
     rng = np.random.default_rng(seed=seed)
@@ -209,7 +211,6 @@ def MC_step(arr,Ts,nmax, seed=None):
     rng = np.random.default_rng(seed=seed)
     aran = rng.normal(scale=scale, size=(nmax,nmax))
     
-    print(f"{arr}")
     for i in range(nmax):
         for j in range(nmax):
             ix = xran[i,j]
@@ -230,6 +231,7 @@ def MC_step(arr,Ts,nmax, seed=None):
                     accept += 1
                 else:
                     arr[ix,iy] -= ang
+    print(f"ans = {accept/(nmax*nmax)}")
     return accept/(nmax*nmax)
 #=======================================================================
 def main(program, nsteps, nmax, temp, pflag,seed):
@@ -248,7 +250,7 @@ def main(program, nsteps, nmax, temp, pflag,seed):
     # Create and initialise lattice
     lattice = initdat(nmax,seed)
     # Plot initial frame of lattice
-    plotdat(lattice,pflag,nmax)
+    #plotdat(lattice,pflag,nmax)
     # Create arrays to store energy, acceptance ratio and order parameter
     energy = np.zeros(nsteps+1,dtype=np.dtype)
     ratio = np.zeros(nsteps+1,dtype=np.dtype)
@@ -270,8 +272,8 @@ def main(program, nsteps, nmax, temp, pflag,seed):
     # Final outputs
     print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(program, nmax,nsteps,temp,order[nsteps-1],runtime))
     # Plot final frame of lattice and generate output file
-    savedat(lattice,nsteps,temp,runtime,ratio,energy,order,nmax)
-    plotdat(lattice,pflag,nmax)
+    #savedat(lattice,nsteps,temp,runtime,ratio,energy,order,nmax)
+    #plotdat(lattice,pflag,nmax)
 #=======================================================================
 # Main part of program, getting command line arguments and calling
 # main simulation function.
