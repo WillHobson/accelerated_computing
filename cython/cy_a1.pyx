@@ -54,18 +54,16 @@ cpdef double get_order(np.ndarray[double, ndim=2] arr, int nmax):
 
 
 
-cpdef double MC_step(np.ndarray[double, ndim=2] arr, double Ts,int nmax):
-    #
-    # Pre-compute some random numbers.  This is faster than
-    # using lots of individual calls.  "scale" sets the width
-    # of the distribution for the angle changes - increases
-    # with temperature.
+cpdef double MC_step(np.ndarray[double, ndim=2] arr, double Ts, int nmax, seed=None):
     cdef double scale=0.1+Ts
-    cdef int accept=0
-    cdef np.ndarray[np.int_t, ndim=2] xran=np.random.randint(0,high=nmax, size=(nmax,nmax))
-    cdef np.ndarray[np.int_t, ndim=2] yran=np.random.randint(0,high=nmax, size=(nmax,nmax))
-    
-    cdef np.ndarray[double, ndim=2] aran = np.random.normal(scale=scale, size=(nmax,nmax))
+    cdef double accept=0
+    rng = np.random.default_rng(seed)
+    cdef np.ndarray[np.int_t, ndim=2] xran=rng.integers(low=0,high=nmax,size=(nmax,nmax))
+    rng = np.random.default_rng(seed)
+    cdef np.ndarray[np.int_t, ndim=2] yran=rng.integers(low=0,high=nmax,size=(nmax,nmax))
+    rng = np.random.default_rng(seed)
+    cdef np.ndarray[double, ndim=2] aran = rng.normal(scale=scale, size=(nmax,nmax))
+
     cdef int ix,iy
     cdef double ang, en0, en1, boltz
     
@@ -81,15 +79,32 @@ cpdef double MC_step(np.ndarray[double, ndim=2] arr, double Ts,int nmax):
             if en1<=en0:
                 accept += 1
             else:
-            # Now apply the Monte Carlo test - compare
-            # exp( -(E_new - E_old) / T* ) >= rand(0,1)
                 boltz = exp( -(en1 - en0) / Ts )
-
-                if boltz >= np.random.uniform(0.0,1.0):
+                rng = np.random.default_rng(seed)
+                if boltz >= rng.uniform(0.0,1.0):
                     accept += 1
                 else:
                     arr[ix,iy] -= ang
-    return accept/(nmax*nmax)
+    return accept/float(nmax*nmax)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
