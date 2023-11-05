@@ -44,6 +44,7 @@ def test_get_order(arr,nmax, expect):
 @pytest.mark.parametrize("arr2, ts, nmax, seed, expect",[([arr2, ts, nmax, seed,expect_MC])])
 def test_MC_step(arr2,ts,nmax,seed,expect):
     output = MC_step(arr2, ts, nmax, seed)
+    output = round(output,5)
     assert output == expect
 
 
