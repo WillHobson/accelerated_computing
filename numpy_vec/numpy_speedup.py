@@ -9,10 +9,9 @@ import matplotlib as mpl
 #from mpi4py import MPI
 
 #=======================================================================
-def initdat(nmax):
-    rng = np.random.default_rng(seed=2310)
+def initdat(nmax, seed=None):
+    rng = np.random.default_rng(seed)
     arr = rng.random(size=(nmax,nmax))*2.0*np.pi
-    #arr = np.random.random_sample((nmax,nmax))*2.0*np.pi
     return arr
 #=======================================================================
 def plotdat(arr,pflag,nmax):
@@ -62,8 +61,8 @@ def savedat(arr,nsteps,Ts,runtime,ratio,energy,order,nmax):
     print("# MC step:  Ratio:     Energy:   Order:",file=FileOut)
     print("#=====================================================",file=FileOut)
     # Write the columns of data
-    #for i in range(nsteps+1):
-       # print("   {:05d}    {:6.4f} {:12.4f}  {:6.4f} ".format(i,ratio[i],energy[i],order[i]),file=FileOut)
+    for i in range(nsteps+1):
+        print("   {:05d}    {:6.4f} {:12.4f}  {:6.4f} ".format(i,ratio[i],energy[i],order[i]),file=FileOut)
     FileOut.close()
 #=======================================================================
 def one_energy(arr,ix,iy,nmax):
@@ -90,9 +89,15 @@ def one_energy(arr,ix,iy,nmax):
 def all_energy(arr,nmax):
 
     enall = 0.0
-    for i in range(nmax):
-        for j in range(nmax):
-            enall += one_energy(arr,i,j,nmax)
+    
+    for i in range(nmax**2):
+        ix = i%nmax
+        iy = i//nmax
+        enall += one_energy(arr,ix,iy,nmax)
+        
+    #for i in range(nmax):
+        #for j in range(nmax):
+            #enall += one_energy(arr,i,j,nmax)
     return enall
 #=======================================================================
 def get_order(arr,nmax):
@@ -106,14 +111,18 @@ def get_order(arr,nmax):
     lab = np.vstack((np.cos(arr),np.sin(arr),np.zeros_like(arr))).reshape(3,nmax,nmax)
     for a in range(3):
         for b in range(3):
-            for i in range(nmax):
-                for j in range(nmax):
-                    Qab[a,b] += 3*lab[a,i,j]*lab[b,i,j] - delta[a,b]
+            for i in range(nmax**2):
+                #for j in range(nmax):
+                    #Qab[a,b] += 3*lab[a,i,j]*lab[b,i,j] - delta[a,b]
+                ix = i%nmax
+                iy = i//nmax
+                Qab[a,b] += 3*lab[a,ix,iy]*lab[b,ix,iy] - delta[a,b]
+                
     Qab = Qab/(2*nmax*nmax)
     eigenvalues,eigenvectors = np.linalg.eig(Qab)
     return eigenvalues.max()
 #=======================================================================
-def MC_step(arr,Ts,nmax):
+def MC_step(arr,Ts,nmax,seed=None):
 
     #
     # Pre-compute some random numbers.  This is faster than
@@ -122,7 +131,7 @@ def MC_step(arr,Ts,nmax):
     # with temperature.
     scale=0.1+Ts
     accept = 0
-    rng = np.random.default_rng(seed=2310)
+    rng = np.random.default_rng(seed)
     aran=rng.normal(scale=scale, size=(nmax,nmax))
     
     for i in range(nmax**2):
@@ -146,7 +155,7 @@ def MC_step(arr,Ts,nmax):
                 arr[ix,iy] -= ang
     return accept/(nmax*nmax)
 #=======================================================================
-def main(program, nsteps, nmax, temp, pflag):
+def main(program, nsteps, nmax, temp, pflag,seed=None):
     """
     Arguments:
 	  program (string) = the name of the program;
@@ -160,9 +169,9 @@ def main(program, nsteps, nmax, temp, pflag):
       NULL
     """
     # Create and initialise lattice
-    lattice = initdat(nmax)
+    lattice = initdat(nmax,seed)
     # Plot initial frame of lattice
-    plotdat(lattice,pflag,nmax)
+    #plotdat(lattice,pflag,nmax)
     # Create arrays to store energy, acceptance ratio and order parameter
     energy = np.zeros(nsteps+1,dtype=np.dtype)
     ratio = np.zeros(nsteps+1,dtype=np.dtype)
@@ -175,7 +184,7 @@ def main(program, nsteps, nmax, temp, pflag):
     # Begin doing and timing some MC steps.
     initial = time.time()
     for it in range(1,nsteps+1):
-        ratio[it] = MC_step(lattice,temp,nmax)
+        ratio[it] = MC_step(lattice,temp,nmax,seed)
         energy[it] = all_energy(lattice,nmax)
         order[it] = get_order(lattice,nmax)
     final = time.time()
@@ -191,13 +200,17 @@ def main(program, nsteps, nmax, temp, pflag):
 # main simulation function.
 #
 if __name__ == '__main__':
-    if int(len(sys.argv)) == 5:
+    if int(len(sys.argv)) >=5:
         PROGNAME = sys.argv[0]
         ITERATIONS = int(sys.argv[1])
         SIZE = int(sys.argv[2])
         TEMPERATURE = float(sys.argv[3])
         PLOTFLAG = int(sys.argv[4])
-        main(PROGNAME, ITERATIONS, SIZE, TEMPERATURE, PLOTFLAG)
+        if int(len(sys.argv)) ==6:
+            SEED = int(sys.argv[5]) 
+        else:
+            SEED=None
+        main(PROGNAME, ITERATIONS, SIZE, TEMPERATURE, PLOTFLAG, SEED)
     else:
-        print("Usage: python {} <ITERATIONS> <SIZE> <TEMPERATURE> <PLOTFLAG>".format(sys.argv[0]))
+        print("Usage: python {} <ITERATIONS> <SIZE> <TEMPERATURE> <PLOTFLAG> <SEED>".format(sys.argv[0]))
 #=======================================================================
