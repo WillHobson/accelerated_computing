@@ -1,7 +1,100 @@
-This repository will track my work for the acclerated computing project
+This repository tracks my work for the acclerated computing project
 
 The template code in the file lebwohlLasher.py was provided and the aim 
 of this work is to use multiple methods to achieve the best speedup.
 
 A report will summarise the affect each optimisation method has on the time
 to run this program.
+
+
+
+Files:
+
+MPI:
+    -c1o_e_mpi.py:
+    this script uses 2 cores. Core 0 handles the bulk of the simulation, core1 calculates the energies and reports back to core 0. Use shell script 1 to run.
+    
+    -c1e_c2o_mpi.py
+    This code uses 3 cores. Core 0 handles admin and MC_step, core 1 handles energy summations and core 2 calculates order all of which is reported back to core 0. Use shell script 2 to run
+    
+    -n_core_e_mpi.py
+    this code has core 0 handle the simulation and distributes the work of energy summation over the lattice to the other n-1 requested cores. Work is distributed approximatley evenly, see report section 2.1. Use shell script 3 to run
+    
+========================================================================================================       
+CYTHON:
+    -cy_a1.pyx:
+    cythonised functions for simulations
+    
+    -cy_run_a1.py:
+    script to run simulation with cythonised functions
+    
+    -cy_setup_a1.py:
+    script for the setup of compiliation for the cythonised functions
+    
+    -testing_cy.py:
+    pytest file for testing functions. Run by:
+    >> pytest testing_cy.py
+    
+    Note the presence of 'cy_a1.cpython-39-darwin.so' and 'cy_a1.c', these can be ignored. The build file should allow the program to be run without compilation. To compile locally and run:
+    
+    >> python cy_setup_a1.py build_ext --inplace
+    >> python cy_run_a1.py <ITERATIONS> <SIZE> <TEMP> <PLOTFLAG> <SEED(optional)>
+    
+    ========================================================================================================   
+    
+CYTHON_PARALLEL:
+    -par_cy.pyx:
+    cythonised functions adapted to work in parallel using openmp threads
+    
+    -par_run_cy.py:
+    run script to call cythonised functions
+    
+    -par_setup_cy.py:
+    setup file for compilation.
+    
+    Note that for me when compiling the compiler had to be specified like CC=gcc-13
+ 
+========================================================================================================   
+
+NUMBA:
+    -numba_serial.py:
+    A version of the code using numba to speed up certain functions
+    
+    -numba_parallel.py:
+    The numba_serial code parallelised to run using openmp threads
+    
+    -testing_nu.py:
+    pytest file for checking functionality of both verison of numba
+    
+========================================================================================================   
+    
+NUMPY_VEC:
+    -original.py:
+    a copy of the original code modified with random number seeds to aid testing
+    
+    -numpy_speedup.py:
+    A version of code with attempts to reduce number of for loops and acheive speed up by using numpy
+    
+    -testing_numpy.py:
+    pytest code for checking functionality of numpy_speedup.py
+    
+========================================================================================================   
+
+OTHER:
+    -lebwohlLasher.py:
+    Original code version for reference
+    
+    -plotting.ipynb:
+    python notebook for producing plots from outputs
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
